@@ -57,20 +57,36 @@ def predict():
         }
     """
 
-    data = request.get_json(silent=True) or {}
+    data       = request.get_json(silent=True) or {}
     model_name = data.get("model")
-    features = data.get("features")
+    features   = data.get("features")          # list from the client
 
-    if not model_name or features is None:
-        return jsonify({"error": "model and features are required"}), 400
+    # Basic checks
+    if not model_name or not isinstance(features, list):
+        return jsonify({"error": "model and feature list are required"}), 400
 
     model = load_model(model_name)
     if model is None:
         return jsonify({"error": f"model '{model_name}' not found"}), 404
 
-    X = np.asarray([features])
-    prediction = model.predict(X)[0]
-    return jsonify({"prediction": float(prediction)})
+    # How many features was this model trained with?
+    expected = getattr(model, "n_features_in_", None)
+    if expected is None:          # Fallback if the attribute is missing
+        expected = len(features)
+
+    # Pad or validate
+    if len(features) < expected:
+        features = features + [None] * (expected - len(features))  # None → np.nan
+    elif len(features) > expected:
+        return jsonify({
+            "error": f"model expects {expected} features, "
+                     f"but received {len(features)}"
+        }), 400
+
+    # Convert to NumPy (None becomes np.nan)
+    X = np.asarray([features], dtype=float)
+    pred = float(model.predict(X)[0])
+    return jsonify({"prediction": pred})
 
 
 @app.route("/batch_predict", methods=["POST"])
