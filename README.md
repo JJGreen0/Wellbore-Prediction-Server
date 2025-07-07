@@ -19,6 +19,9 @@ python app.py
 
 By default the server listens on port `5000`.
 
+You can also open a small web demo at [`/demo`](http://localhost:5000/demo) to
+select a model and enter feature values for a quick prediction.
+
 ## API
 
 ### `POST /predict`
