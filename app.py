@@ -7,7 +7,7 @@ from functools import lru_cache
 
 import joblib
 import numpy as np
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 
 
 app = Flask(__name__)
@@ -28,6 +28,22 @@ def load_model(name: str):
 @app.route("/")
 def hello_world():
     return "Hello, Flask!"
+
+
+@app.route("/models")
+def list_models():
+    """Return available model names."""
+    names = []
+    for filename in os.listdir(MODEL_DIR):
+        if filename.endswith("_50m_pipeline.pkl"):
+            names.append(filename.split("_", 1)[0])
+    return jsonify({"models": sorted(names)})
+
+
+@app.route("/demo")
+def demo_page():
+    """Serve the simple demo page."""
+    return render_template("demo.html")
 
 
 @app.route("/predict", methods=["POST"])
